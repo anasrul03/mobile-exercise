@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_app/Component/buttonNav.dart';
 import 'package:my_app/Component/toMarkPage.dart';
+import 'package:my_app/ListView.dart';
+import 'package:my_app/MobileTeam.dart';
 import 'package:my_app/Students/student1.dart';
 import 'package:my_app/Students/student2.dart';
 import 'package:my_app/Students/student3.dart';
@@ -41,7 +43,7 @@ class MyApp extends StatelessWidget {
         '/albert': (context) => const Student2(name: 'Albert Einstein'),
         '/wanda': (context) => const Student3(name: 'Wanda Maximoff'),
         '/marks': (context) => const Marks(),
-        '/weather': (context) => BlocProvider(
+        '/weather': (context) => BlocProvider<CubitforWeather>(
               create: (context) => CubitforWeather(),
               child: WeatherPage(),
             ), //API
@@ -55,6 +57,8 @@ class MyApp extends StatelessWidget {
               create: (context) => WeatherCubit(),
               child: SimpleWeather(),
             ),
+        '/listview': (context) => ListCard(),
+        '/mobileteam': (context) => MobileDev(),
       },
     );
   }
@@ -161,6 +165,14 @@ class _MyHomePageState extends State<MyHomePage> {
               NaviButton(
                 title: 'to Simple Weather App',
                 routeTo: '/simpleWeather',
+              ),
+              NaviButton(
+                title: 'to List Card App',
+                routeTo: '/listview',
+              ),
+              NaviButton(
+                title: 'to Mobile Team App',
+                routeTo: '/mobileteam',
               ),
             ],
           ),

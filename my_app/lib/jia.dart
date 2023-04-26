@@ -1,7 +1,31 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<WeatherCubit>(
+      create: (BuildContext context) {
+        return WeatherCubit();
+      },
+      child: MaterialApp(
+        title: 'Weather App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: const WeatherPage(),
+      ),
+    );
+  }
+}
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({Key? key}) : super(key: key);
@@ -11,16 +35,17 @@ class WeatherPage extends StatefulWidget {
 }
 
 class _WeatherPageState extends State<WeatherPage> {
-  final TextEditingController _inputController = TextEditingController();
-  // final CubitforWeather _cubitForWeather = CubitforWeather();
-  String userInput = "cyberjaya";
+  final _formKey = GlobalKey<FormState>();
+
+  late TextEditingController inputController = TextEditingController();
+
+  String city = "cyberjaya";
+
   @override
   void initState() {
     super.initState();
-
-    final CubitforWeather _cubit = BlocProvider.of<CubitforWeather>(context);
-
-    _cubit._getCurrentWeatherData(userInput);
+    final WeatherCubit weatherCubit = BlocProvider.of<WeatherCubit>(context);
+    weatherCubit._getCurrentWeatherData(city);
   }
 
   @override
@@ -29,78 +54,78 @@ class _WeatherPageState extends State<WeatherPage> {
       appBar: AppBar(
         title: const Text('Weather App'),
       ),
-      body: BlocBuilder<CubitforWeather, WeatherState>(
+      body: BlocBuilder<WeatherCubit, Weather>(
         builder: (context, state) {
           return Container(
             width: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(BlocProvider.of<CubitforWeather>(context)
-                    ._backgroundImageUrl),
+                image: NetworkImage(state.backgroundImageUrl),
                 fit: BoxFit.fill,
               ),
             ),
-            child: Container(
-              margin: const EdgeInsets.all(30),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                            controller: _inputController,
-                            // obscureText: true,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(),
-                              label: Text("Input Location"),
-                            )),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 50),
+                Padding(
+                  padding: const EdgeInsets.all(50),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(children: [
+                      TextFormField(
+                        controller: inputController,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter some text';
+                          }
+                          return null;
+                        },
                       ),
-                      IconButton(
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              userInput = _inputController.text;
-                              BlocProvider.of<CubitforWeather>(context)
-                                  ._getCurrentWeatherData(userInput);
-                            });
+                            BlocProvider.of<WeatherCubit>(context)
+                                ._getCurrentWeatherData(inputController.text);
                           },
-                          icon: Icon(Icons.search)),
-                    ],
+                          child: const Text('Submit'),
+                        ),
+                      )
+                    ]),
                   ),
-                  const SizedBox(height: 50),
-                  Text(
-                    BlocProvider.of<CubitforWeather>(context)._location,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                Text(
+                  state.location,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    BlocProvider.of<CubitforWeather>(context)._weatherCondition,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  state.weatherCondition,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    '${BlocProvider.of<CubitforWeather>(context)._temperature}° C',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 64,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  '${state.temperature}° Celsius',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 64,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 20),
-                  // ElevatedButton(
-                  //   onPressed: BlocProvider.of<CubitforWeather>(context)
-                  //       ._toggleTemperatureUnit,
-                  //   child: const Text('Toggle Temperature Unit'),
-                  // ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                // ElevatedButton(
+                //   onPressed: _toggleTemperatureUnit,
+                //   child: const Text('Toggle Temperature Unit'),
+                // ),
+              ],
             ),
           );
         },
@@ -109,9 +134,23 @@ class _WeatherPageState extends State<WeatherPage> {
   }
 }
 
-class CubitforWeather extends Cubit<WeatherState> {
-  CubitforWeather()
-      : super(WeatherState(
+class Weather {
+  String weatherCondition = '';
+  String temperature = '';
+  String location = '';
+  String backgroundImageUrl = '';
+
+  Weather(
+      {required this.weatherCondition,
+      required this.temperature,
+      required this.location,
+      required this.backgroundImageUrl});
+}
+
+class WeatherCubit extends Cubit<Weather> {
+  // WeatherCubit() : super("");
+  WeatherCubit()
+      : super(Weather(
             weatherCondition: "",
             temperature: "",
             location: "",
@@ -141,7 +180,7 @@ class CubitforWeather extends Cubit<WeatherState> {
           _getBackgroundImageUrl(_weatherCondition).toString();
       // _isLoading = false;
 
-      emit(WeatherState(
+      emit(Weather(
           weatherCondition: _weatherCondition,
           temperature: _temperature,
           location: _location,
@@ -186,17 +225,4 @@ class CubitforWeather extends Cubit<WeatherState> {
   //         (((double.parse(_temperature) - 32) * 5 / 9).toStringAsFixed(0));
   //   }
   // }
-}
-
-class WeatherState {
-  String weatherCondition = '';
-  String temperature = '';
-  String location = '';
-  String backgroundImageUrl = '';
-
-  WeatherState(
-      {required this.weatherCondition,
-      required this.temperature,
-      required this.location,
-      required this.backgroundImageUrl});
 }
